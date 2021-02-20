@@ -1,13 +1,21 @@
 # bot.py
+# This file deals with the interections with the discord api only.
+# This file uses concurrent programming hence the use of @, async, and wait. All commands can processes dynamically.
+# We will only run this file
 
+# Importing relevant libraries,modules and files
 import os
 import discord
 import random
 from dotenv import load_dotenv
 from discord.ext import commands
-import database
+import database  # importing the database.py file
 
-# loading your enivornement with your tokens (should be kept in a separate file .env as you dont want anyone to access tokens)
+# Create connection to RDS database and ensure the database and tables exist
+print("Initialising the database.")
+database.init_db()  # function in database.py file
+
+# Loading your .env with your tokens
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD = os.getenv("DISCORD_GUILD")
@@ -18,16 +26,13 @@ bot = commands.Bot(
 
 meetings = []
 
-# using concurrent programming hence the use of @, async, and wait. All commands can processes dynamically.
-
-# function to show when the bot is connected to the discord server
-
-
+# Shows when the bot is connected to the discord server
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
 
 
+# add meeting command
 @bot.command(
     name="add_meeting",
     help="Specify meeting title and datetime in format dd/mm/yyyy HH:MM. e.g. !add_meeting ML Tutorial 06/03/2021 09:00",
