@@ -62,7 +62,7 @@ async def add_meeting(ctx, *args):
     await ctx.send(f"<@{user.id}> your meeting has been added.")
 
 
-# sends a message to the user if they do not provide the right arguments
+# sends a message to the user contaning the error observed when running the bot.py file
 @bot.event
 async def on_command_error(ctx, error):
     print(error)
