@@ -10,6 +10,7 @@ import random
 from dotenv import load_dotenv
 from discord.ext import commands
 import database  # importing the database.py file
+from datetime import datetime
 
 # Create connection to RDS database and ensure the database and tables exist
 print("Initialising the database.")
@@ -48,23 +49,29 @@ async def add_meeting(ctx, *args):
     channel = ctx.channel
 
     # gather command arguments which are delimited by spaces in the user's command message
-    time = args[-1]  # time should always be the last argument
-    date = args[-2]  # date should always be 2nd to last
+    #time = args[-1]  # time should always be the last argument
+    #date = args[-2]  # date should always be 2nd to last
+    time=" ".join(
+        args[-2:]
+    )
+    print(type(time))
+    print(time)
+    time = datetime.strptime(time,"%d/%m/%Y %H:%M")
+    print(type(time))
+    print(time)
+   
+
     title = " ".join(
         args[0:-2]
     )  # since we don't know how many spaces in the title, join up to the last 2 elements
-
-    # insert meeting into list
-    meetings.append(
-        {
-            "time": time,
-            "date": date,
-            "title": title,
-            "user_id": user.id,
-            "server_id": server.id,
-            "channel_id": channel.id,
-        }
-    )
+    user_id=user.id
+    server_id= server.id
+    channel_id=channel.id
+    cancelled=1 #will remove it after the flow is clear
+    
+    # insert meeting into database
+    add_meeting(title, user_id, server_id, channel_id, time, cancelled)
+   
 
     print(meetings)
     await ctx.send(f"<@{user.id}> your meeting has been added.")

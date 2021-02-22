@@ -95,6 +95,26 @@ def init_db():
 # function to add meeting records to the table (using SQL queries)
 # e.g def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
 # meeting_id = uuid.uuid4()  # Create a unique value for meeting_id
+def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
+    
+    conn = psycopg2.connect(
+        user=database_user,
+        password=database_password,
+        dbname=database_name,  
+        host=database_endpoint,
+        port=database_port,
+    )
+    meeting_id = uuid.uuid4()
+    cur = conn.cursor()
+    postgres_insert_query = """INSERT INTO meetings (meeting_id,title, user_id, server_id, channel_id, time, cancelled,) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
+    record_to_insert = (meeting_id,title, user_id, server_id, channel_id, time, cancelled)
+    cur.execute(postgres_insert_query, record_to_insert)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+#https://pynative.com/python-postgresql-insert-update-delete-table-data-to-perform-crud-operations/
+
 
 # function to remove meeting records from the table
 # .e.g def cancel_meeting(title, user_id, server_id, channel_id, time, cancelled):
