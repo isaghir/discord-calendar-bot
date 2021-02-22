@@ -2,9 +2,11 @@
 # Here we will create fucntions that can query and add records
 
 import psycopg2
+import psycopg2.extras
 import os
 import uuid
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()  # loading the .env file
 
@@ -89,34 +91,32 @@ def init_db():
     create_tables()
 
 
-# Next:
-
-
 # function to add meeting records to the table (using SQL queries)
-# e.g def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
-# meeting_id = uuid.uuid4()  # Create a unique value for meeting_id
 def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
-    
+
     conn = psycopg2.connect(
         user=database_user,
         password=database_password,
-        dbname=database_name,  
+        dbname=database_name,
         host=database_endpoint,
         port=database_port,
     )
-    meeting_id = uuid.uuid4()
+
+    meeting_id = uuid.uuid4()  # Create a unique value for meeting_id
+    time_str = time.isoformat()
+    psycopg2.extras.register_uuid()  # register the uuid
+
     cur = conn.cursor()
-    postgres_insert_query = """INSERT INTO meetings (meeting_id,title, user_id, server_id, channel_id, time, cancelled,) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
-    record_to_insert = (meeting_id,title, user_id, server_id, channel_id, time, cancelled)
-    cur.execute(postgres_insert_query, record_to_insert)
+    postgres_insert_query = f"INSERT INTO meetings (meeting_id, title, user_id, server_id, channel_id, time, cancelled) VALUES ('{meeting_id}','{title}','{user_id}','{server_id}','{channel_id}','{time_str}',{cancelled})"
+    cur.execute(postgres_insert_query)
 
     conn.commit()
+    print("Record inserted successfully into database")
     cur.close()
     conn.close()
-#https://pynative.com/python-postgresql-insert-update-delete-table-data-to-perform-crud-operations/
 
 
-# function to remove meeting records from the table
+# function to remove cancelled meetings
 # .e.g def cancel_meeting(title, user_id, server_id, channel_id, time, cancelled):
 
-# function to lookup meeting records in the table
+# function to lookup meeting records in the table / set auto reminders

@@ -21,25 +21,21 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD = os.getenv("DISCORD_GUILD")
 
-bot = commands.Bot(
-    command_prefix="!"
-)  # bot recognises "!" as a command. "!" initialises bot
-
-meetings = []
-
+# bot recognises "!" as a command. "!" initialises bot
+bot = commands.Bot(command_prefix="!")
 # Shows when the bot is connected to the discord server
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
 
 
-# add meeting command
+# Add meeting command
 @bot.command(
     name="add_meeting",
     help="Specify meeting title and datetime in format dd/mm/yyyy HH:MM. e.g. !add_meeting ML Tutorial 06/03/2021 09:00",
 )
 async def add_meeting(ctx, *args):
-    # send help message if user does not specify arguments
+    # send the help message if user does not specify arguments
     if len(args) == 0:
         await ctx.send_help()
 
@@ -49,34 +45,24 @@ async def add_meeting(ctx, *args):
     channel = ctx.channel
 
     # gather command arguments which are delimited by spaces in the user's command message
-    #time = args[-1]  # time should always be the last argument
-    #date = args[-2]  # date should always be 2nd to last
-    time=" ".join(
-        args[-2:]
-    )
-    print(type(time))
-    print(time)
-    time = datetime.strptime(time,"%d/%m/%Y %H:%M")
-    print(type(time))
-    print(time)
-   
+    time = " ".join(args[-2:])
+    time = datetime.strptime(time, "%d/%m/%Y %H:%M")  # convert time to datetime object
 
-    title = " ".join(
-        args[0:-2]
-    )  # since we don't know how many spaces in the title, join up to the last 2 elements
-    user_id=user.id
-    server_id= server.id
-    channel_id=channel.id
-    cancelled=1 #will remove it after the flow is clear
-    
+    # since we don't know how many spaces are in the title, join up to the last 2 elements
+    title = " ".join(args[0:-2])
+
+    user_id = user.id
+    server_id = server.id
+    channel_id = channel.id
+    cancelled = False
+
     # insert meeting into database
-    add_meeting(title, user_id, server_id, channel_id, time, cancelled)
-   
+    database.add_meeting(title, user_id, server_id, channel_id, time, cancelled)
 
-    print(meetings)
     await ctx.send(f"<@{user.id}> your meeting has been added.")
 
 
+# sends a message to the user if they do not provide the right arguments
 @bot.event
 async def on_command_error(ctx, error):
     print(error)
