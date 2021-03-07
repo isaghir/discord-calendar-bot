@@ -10,7 +10,7 @@ import random
 from dotenv import load_dotenv
 from discord.ext import commands
 import database  # importing the database.py file
-from datetime import datetime
+from datetime import datetime,timedelta 
 
 # Create connection to RDS database and ensure the database and tables exist
 print("Initialising the database.")
@@ -61,7 +61,99 @@ async def add_meeting(ctx, *args):
 
     await ctx.send(f"<@{user.id}> your meeting has been added.")
 
+@bot.command(
+    name="lookup_meeting_by_day",
+    help="Specify the date  in format dd/mm/yyyy  e.g. !lookup_meeting_by_day 21/08/2021 ",
 
+)
+async def lookup_meeting_by_day(ctx, *args):
+    # send the help message if user does not specify arguments
+    if len(args) == 0:
+        await ctx.send_help()
+
+    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    user = ctx.author
+    server = ctx.guild
+    channel = ctx.channel
+
+    # gather command arguments such as date 
+    date = " ".join(args[-1:])
+    date = datetime.strptime(date, "%d/%m/%Y")  # convert date to datetime object
+    date_after_1_day = date + timedelta(days = 1)#incrementing the user given date by 1 day 
+    # we try to run sql queries to retrieve records from the date given to the next date 
+
+    user_id = user.id
+    server_id = server.id
+    channel_id = channel.id
+    cancelled = False
+
+    # looking into the database
+    database.lookup_meeting_by_day(user_id, server_id, channel_id, date,date_after_1_day, cancelled)
+    
+
+    await ctx.send(f"<@{user.id}> your meeting schedule for the date <@{date}>")
+
+
+@bot.command(
+    name="lookup_meeting_by_week",
+    help="schedule for the next 7 days ",
+
+)
+async def lookup_meeting_by_week(ctx, *args):
+    # send the help message if user does not specify arguments
+    if len(args) == 0:
+        await ctx.send_help()
+
+    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    user = ctx.author
+    server = ctx.guild
+    channel = ctx.channel
+
+    # gather command arguments such as date 
+    date = datetime.now()# current date 
+    date_after_7_days = date + timedelta(days = 7)# incrementing current date by 7 days 
+    # we try to run sql queries to retrieve records from current date  to the next 7 days 
+
+    user_id = user.id
+    server_id = server.id
+    channel_id = channel.id
+    cancelled = False
+
+    # insert meeting into database
+    database.lookup_meeting_by_week(user_id, server_id, channel_id, date,date_after_7_days, cancelled)
+
+    await ctx.send(f"<@{user.id}> your meeting schedule for the next 7 days ")
+
+@bot.command(
+    name="lookup_meeting_by_month",
+    help="schedule for the next 1 month",
+
+)
+async def lookup_meeting_by_month(ctx, *args):
+    # send the help message if user does not specify arguments
+    if len(args) == 0:
+        await ctx.send_help()
+
+    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    user = ctx.author
+    server = ctx.guild
+    channel = ctx.channel
+
+    # gather command arguments such as date 
+    date = datetime.now()
+    date_after_30_days = date + timedelta(days = 30)
+
+    user_id = user.id
+    server_id = server.id
+    channel_id = channel.id
+    cancelled = False
+
+    # insert meeting into database
+    database.lookup_meeting_by_month(user_id, server_id, channel_id, date,date_after_30_days, cancelled)
+
+    await ctx.send(f"<@{user.id}> your meeting schedule for the next 1 month")
+
+     
 # sends a message to the user contaning the error observed when running the bot.py file
 @bot.event
 async def on_command_error(ctx, error):

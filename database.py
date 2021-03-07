@@ -116,7 +116,83 @@ def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
     conn.close()
 
 
-# function to remove cancelled meetings
-# .e.g def cancel_meeting(title, user_id, server_id, channel_id, time, cancelled):
+# function to remove cancelled meetings- check if delete or update cancel
+def cancel_meeting(title, user_id, server_id, channel_id, time, cancelled):
+    conn = psycopg2.connect(
+        user=database_user,
+        password=database_password,
+        dbname=database_name,
+        host=database_endpoint,
+        port=database_port,
+    )
+    cur = conn.cursor()
+    postgres_insert_query = f"UPDATE meetings SET cancelled = TRUE WHERE time='{time}'"
+    cur.execute(postgres_insert_query)
+    conn.commit()
+    print("cancelled the meeting ")
+    cur.close()
+    conn.close()
+
 
 # function to lookup meeting records in the table / set auto reminders
+def lookup_meeting_by_day(user_id, server_id, channel_id, date,date_after_1_day, cancelled):
+
+    conn = psycopg2.connect(
+        user=database_user,
+        password=database_password,
+        dbname=database_name,
+        host=database_endpoint,
+        port=database_port,
+    )
+
+    cur = conn.cursor()
+    #postgres_insert_query = f"SELECT * FROM  meetings WHERE time=('{date}' + '1 day'::interval) and cancelled=FALSE"
+    postgres_insert_query = f"SELECT * FROM  meetings WHERE time>'{date}' and time<'{date_after_1_day}' and cancelled=false"
+    cur.execute(postgres_insert_query)
+    records = cur.fetchall()
+    print(records)
+    conn.commit()
+    
+    cur.close()
+    conn.close()
+#https://popsql.com/learn-sql/postgresql/how-to-query-date-and-time-in-postgresql
+
+def lookup_meeting_by_week(user_id, server_id, channel_id, date,date_after_7_days, cancelled):
+
+    conn = psycopg2.connect(
+        user=database_user,
+        password=database_password,
+        dbname=database_name,
+        host=database_endpoint,
+        port=database_port,
+    )
+
+    cur = conn.cursor()
+    #postgres_insert_query = f"select * from meetings where time > (now() + '1 week'::interval) and cancelled=FALSE"
+    postgres_insert_query = f"SELECT * FROM  meetings WHERE time>'{date}' and time<'{date_after_7_days}' and cancelled=false"
+    cur.execute(postgres_insert_query)
+    records = cur.fetchall()
+    print(records)
+    conn.commit()
+    print("Records for the next 7 days ")
+    cur.close()
+    conn.close()
+
+def lookup_meeting_by_month(user_id, server_id, channel_id, date,date_after_30_days, cancelled):
+
+    conn = psycopg2.connect(
+        user=database_user,
+        password=database_password,
+        dbname=database_name,
+        host=database_endpoint,
+        port=database_port,
+    )
+    cur = conn.cursor()
+    postgres_insert_query = f"SELECT * FROM  meetings WHERE time>'{date}' and time<'{date_after_30_days}' and cancelled=false"
+    cur.execute(postgres_insert_query)
+    records = cur.fetchall()
+    print(records)
+    conn.commit()
+    print("Records for the next 1 month ")
+    cur.close()
+    conn.close()
