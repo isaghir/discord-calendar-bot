@@ -6,7 +6,7 @@ import psycopg2.extras
 import os
 import uuid
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 load_dotenv()  # loading the .env file
 
@@ -74,7 +74,8 @@ def create_tables():
         user_id VARCHAR ( 255 ) NOT NULL,
 	    server_id VARCHAR ( 255 ) NOT NULL,
         channel_id VARCHAR ( 255 ) NOT NULL,
-	    time TIMESTAMP NOT NULL,
+	    start_time TIMESTAMP NOT NULL,
+        end_time TIMESTAMP NOT NULL,
         cancelled BOOLEAN NOT NULL
     )"""
     )  # query to create the table
@@ -92,7 +93,7 @@ def init_db():
 
 
 # function to add meeting records to the table (using SQL queries)
-def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
+def add_meeting(title, user_id, server_id, channel_id, start_time, end_time, cancelled):
 
     conn = psycopg2.connect(
         user=database_user,
@@ -103,11 +104,12 @@ def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
     )
 
     meeting_id = uuid.uuid4()  # Create a unique value for meeting_id
-    time_str = time.isoformat()
+    start_time_str = start_time.isoformat()
+    end_time_str = end_time.isoformat()
     psycopg2.extras.register_uuid()  # register the uuid
 
     cur = conn.cursor()
-    postgres_insert_query = f"INSERT INTO meetings (meeting_id, title, user_id, server_id, channel_id, time, cancelled) VALUES ('{meeting_id}','{title}','{user_id}','{server_id}','{channel_id}','{time_str}',{cancelled})"
+    postgres_insert_query = f"INSERT INTO meetings (meeting_id, title, user_id, server_id, channel_id, start_time, end_time, cancelled) VALUES ('{meeting_id}','{title}','{user_id}','{server_id}','{channel_id}','{start_time_str}','{end_time_str}',{cancelled})"
     cur.execute(postgres_insert_query)
 
     conn.commit()
@@ -117,7 +119,7 @@ def add_meeting(title, user_id, server_id, channel_id, time, cancelled):
 
 
 # function to remove cancelled meetings- check if delete or update cancel
-def cancel_meeting(title, user_id, server_id, channel_id, time, cancelled):
+def cancel_meeting(title, user_id, server_id, start_time):
     conn = psycopg2.connect(
         user=database_user,
         password=database_password,
@@ -126,16 +128,18 @@ def cancel_meeting(title, user_id, server_id, channel_id, time, cancelled):
         port=database_port,
     )
     cur = conn.cursor()
-    postgres_insert_query = f"UPDATE meetings SET cancelled = TRUE WHERE time='{time}'"
-    cur.execute(postgres_insert_query)
+    query = f"UPDATE meetings SET cancelled = TRUE WHERE title = '{title}' and start_time='{start_time}'"
+    cur.execute(query)
+    rows_affected = cur.rowcount
     conn.commit()
-    print("cancelled the meeting ")
+    print(f"Cancelled meeting {title} {start_time}")
     cur.close()
     conn.close()
+    return rows_affected
 
 
 # function to lookup meeting records in the table / set auto reminders
-def lookup_meeting_by_day(user_id, server_id, channel_id, date,date_after_1_day, cancelled):
+def lookup_meeting_by_day(user_id, server_id, date):
 
     conn = psycopg2.connect(
         user=database_user,
@@ -145,19 +149,27 @@ def lookup_meeting_by_day(user_id, server_id, channel_id, date,date_after_1_day,
         port=database_port,
     )
 
+    date_after_1_day = date + timedelta(
+        days=1
+    )  # incrementing the user given date by 1 day
+    # we try to run sql queries to retrieve records from the date given to the next date
+
     cur = conn.cursor()
-    #postgres_insert_query = f"SELECT * FROM  meetings WHERE time=('{date}' + '1 day'::interval) and cancelled=FALSE"
-    postgres_insert_query = f"SELECT * FROM  meetings WHERE time>'{date}' and time<'{date_after_1_day}' and cancelled=false"
-    cur.execute(postgres_insert_query)
+    query = f"SELECT title,start_time,end_time FROM  meetings WHERE start_time>'{date}' and start_time<'{date_after_1_day}' and cancelled=false and user_id='{user_id}' and server_id='{server_id}'"
+    cur.execute(query)
     records = cur.fetchall()
-    print(records)
     conn.commit()
-    
     cur.close()
     conn.close()
-#https://popsql.com/learn-sql/postgresql/how-to-query-date-and-time-in-postgresql
+    return records
 
-def lookup_meeting_by_week(user_id, server_id, channel_id, date,date_after_7_days, cancelled):
+
+# https://popsql.com/learn-sql/postgresql/how-to-query-date-and-time-in-postgresql
+
+
+def lookup_meeting_by_week(
+    user_id, server_id, channel_id, date, date_after_7_days, cancelled
+):
 
     conn = psycopg2.connect(
         user=database_user,
@@ -168,7 +180,7 @@ def lookup_meeting_by_week(user_id, server_id, channel_id, date,date_after_7_day
     )
 
     cur = conn.cursor()
-    #postgres_insert_query = f"select * from meetings where time > (now() + '1 week'::interval) and cancelled=FALSE"
+    # postgres_insert_query = f"select * from meetings where time > (now() + '1 week'::interval) and cancelled=FALSE"
     postgres_insert_query = f"SELECT * FROM  meetings WHERE time>'{date}' and time<'{date_after_7_days}' and cancelled=false"
     cur.execute(postgres_insert_query)
     records = cur.fetchall()
@@ -178,7 +190,10 @@ def lookup_meeting_by_week(user_id, server_id, channel_id, date,date_after_7_day
     cur.close()
     conn.close()
 
-def lookup_meeting_by_month(user_id, server_id, channel_id, date,date_after_30_days, cancelled):
+
+def lookup_meeting_by_month(
+    user_id, server_id, channel_id, date, date_after_30_days, cancelled
+):
 
     conn = psycopg2.connect(
         user=database_user,
