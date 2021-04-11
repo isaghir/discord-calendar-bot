@@ -73,5 +73,6 @@ This is a startup script that Fargate executes when running the container.
 ### DockerFile
 This is the specification for building the docker image. The docker image needs to have everything required to run the bot.
 
-
+### requirements.txt
+This contains all the packages needed to run the scripts.
 
