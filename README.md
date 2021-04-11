@@ -66,3 +66,7 @@ The bot is written using the discord.py library and this file runs the bot which
 The bot uses a database to store information in a meetings table. Every command needs to perform a database query to either create, update, or search for meetings in the database. These queries are wrapped in functions written in database.py.
 
 As well as these commands, this file contains the init_db() function which ensures the database and meetings table exists within postgres RDS instance. This is an idempotent function meaning it can safely run every time the bot starts up and it will always reach the same desired state of database and table existence.
+
+### entrypoint.sh
+
+
