@@ -8,14 +8,14 @@ import discord
 import random
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
-import database  # importing the database.py file
+import database  # importing the database.py file as we will be using the functions from it
 from datetime import datetime, timedelta
 
 # Create connection to RDS database and ensuring the database and tables exist
 print("Initialising the database.")
-database.init_db()  # function in database.py file
+database.init_db()  # function in database.py file to create a connection to postgres and creates an meetings table if it does not already exist.
 
-# Loading your .env with discord token
+# Loading the discord token from the  .env file
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -63,7 +63,7 @@ async def add_meeting(ctx, *args):
     channel_id = channel.id
     cancelled = False
 
-    # insert meeting into database using the add_meeting function from database.py
+    # insert meeting into database by calling the add_meeting function from database.py
     database.add_meeting(
         title, user_id, server_id, channel_id, start_time, end_time, cancelled
     )
@@ -100,7 +100,7 @@ async def cancel_meeting(ctx, *args):
 
     rows_affected = database.cancel_meeting(title, user_id, server_id, start_time) # lookup the meetings in the RDS database using the cancel_meeting function from database.py
     if rows_affected > 0: 
-        msg = "Meeting cancelled."
+        msg = "Meeting cancelled." # cancel_meetings returns the number of rows it has updated and set to cancelled in the meetings table. If >0, meeting(s) have been cancelled.
     else:
         msg = "Meeting not found."
 
@@ -124,7 +124,7 @@ async def lookup_meeting_by_day(ctx, *args):
     # gather command arguments such as date
     date = " ".join(args[-1:])
     date = datetime.strptime(date, "%d/%m/%Y")  # convert date to datetime object
-    date_after_1_day = date + timedelta(days=1)
+    date_after_1_day = date + timedelta(days=1) # find the date tomorrow
 
     user_id = user.id
     server_id = server.id
@@ -133,7 +133,7 @@ async def lookup_meeting_by_day(ctx, *args):
         f"Looking up meetings on date {date} for user {user_id} from server {server_id}"
     )
 
-    # looking into the database
+    # looking into the database using the lookup_meeting_by_date_window function from database.py. We set end_date =  date_after_1_day for this function.
     records = database.lookup_meeting_by_date_window(
         user_id, server_id, date, date_after_1_day
     )
@@ -180,7 +180,7 @@ async def lookup_meeting_by_week(ctx, *args):
 
     records = database.lookup_meeting_by_date_window(
         user_id, server_id, date, date_after_7_days
-    )
+    ) # looking into the database using the lookup_meeting_by_date_window function from database.py. We set end_date =  date_after_7_day for this function.
     print(f"Found {len(records)} meetings.")
 
     if records:  # if the database lookup returned records
@@ -224,7 +224,7 @@ async def lookup_meeting_by_month(ctx, *args):
 
     records = database.lookup_meeting_by_date_window(
         user_id, server_id, date, date_after_30_days
-    )
+    ) # looking into the database using the lookup_meeting_by_date_window function from database.py. We set end_date =  date_after_30_day for this function.
     print(f"Found {len(records)} meetings.")
 
     if records:  # if the database lookup returned records
@@ -243,15 +243,15 @@ async def lookup_meeting_by_month(ctx, *args):
 
 
 # NOTIFICATIONS: every minute, check for meetings starting in the next minute and DM the creator of the meeting
-@tasks.loop(minutes=1.0)
+@tasks.loop(minutes=1.0) # The tasks decorator allows the function to be run in the background, in our case every 1 minute for all users.
 async def notify_meeting_start():
     date = datetime.now()
-    date_after_1_minute = date + timedelta(minutes=1)
+    date_after_1_minute = date + timedelta(minutes=1) # calculate the time after 1 minute 
 
-    records = database.lookup_all_meetings_by_date_window(date, date_after_1_minute)
+    records = database.lookup_all_meetings_by_date_window(date, date_after_1_minute) 
 
     if records:
-        print(f"Notifying meeting start for {len(records)} meetings.")
+        print(f"Notifying meeting start for {len(records)} meetings.") # use the lookup_all_meetings_by_date_window from database.py (here we query for all users)
         for record in records:
             title = record[0]
             start_time = record[1].strftime("%d/%m/%Y %H:%M")
@@ -263,14 +263,14 @@ async def notify_meeting_start():
             await user.send(message)
 
             
-# Shows when the bot is connected to the discord server
-@bot.event
+# This code block executes when the bot first connects to Discord
+@bot.event 
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
-    notify_meeting_start.start()
+    notify_meeting_start.start()  # Starts the background task loop
 
     
-# sends a message to the user contaning log errors
+# Sends information back to the channel when errors occur
 @bot.event
 async def on_command_error(ctx, error):
     print(error)
