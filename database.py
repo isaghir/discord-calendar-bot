@@ -64,9 +64,9 @@ def create_tables():
     cur = conn.cursor()
 
     print("Creating meetings table if it doesn't exist.")
-    cur.execute(
-        f"DROP TABLE IF EXISTS meetings"
-    )  # Remove this after testing is complete(keep it just so we dont have to always drop the table to make changes)
+    # cur.execute(
+    #     f"DROP TABLE IF EXISTS meetings"
+    # )  # Remove this after testing is complete(keep it just so we dont have to always drop the table to make changes)
     cur.execute(
         f"""CREATE TABLE IF NOT EXISTS meetings (
         meeting_id VARCHAR ( 255 ) PRIMARY KEY,
@@ -138,8 +138,8 @@ def cancel_meeting(title, user_id, server_id, start_time):
     return rows_affected
 
 
-# function to lookup meeting records in the table / set auto reminders
-def lookup_meeting_by_day(user_id, server_id, date):
+# function to lookup meeting records in the table for a specific user
+def lookup_meeting_by_date_window(user_id, server_id, start_date, end_date):
 
     conn = psycopg2.connect(
         user=database_user,
@@ -149,13 +149,9 @@ def lookup_meeting_by_day(user_id, server_id, date):
         port=database_port,
     )
 
-    date_after_1_day = date + timedelta(
-        days=1
-    )  # incrementing the user given date by 1 day
-    # we try to run sql queries to retrieve records from the date given to the next date
-
+    # we try to run a sql query to retrieve records from the date given to the next date
     cur = conn.cursor()
-    query = f"SELECT title,start_time,end_time FROM  meetings WHERE start_time>'{date}' and start_time<'{date_after_1_day}' and cancelled=false and user_id='{user_id}' and server_id='{server_id}'"
+    query = f"SELECT title,start_time,end_time FROM  meetings WHERE start_time>'{start_date}' and start_time<'{end_date}' and cancelled=false and user_id='{user_id}' and server_id='{server_id}'"
     cur.execute(query)
     records = cur.fetchall()
     conn.commit()
@@ -164,12 +160,8 @@ def lookup_meeting_by_day(user_id, server_id, date):
     return records
 
 
-# https://popsql.com/learn-sql/postgresql/how-to-query-date-and-time-in-postgresql
-
-
-def lookup_meeting_by_week(
-    user_id, server_id, channel_id, date, date_after_7_days, cancelled
-):
+# function to lookup meeting records in the table for all users
+def lookup_all_meetings_by_date_window(start_date, end_date):
 
     conn = psycopg2.connect(
         user=database_user,
@@ -180,34 +172,10 @@ def lookup_meeting_by_week(
     )
 
     cur = conn.cursor()
-    # postgres_insert_query = f"select * from meetings where time > (now() + '1 week'::interval) and cancelled=FALSE"
-    postgres_insert_query = f"SELECT * FROM  meetings WHERE time>'{date}' and time<'{date_after_7_days}' and cancelled=false"
-    cur.execute(postgres_insert_query)
+    query = f"SELECT title,start_time,end_time,user_id FROM  meetings WHERE start_time>'{start_date}' and start_time<'{end_date}' and cancelled=false"
+    cur.execute(query)
     records = cur.fetchall()
-    print(records)
     conn.commit()
-    print("Records for the next 7 days ")
     cur.close()
     conn.close()
-
-
-def lookup_meeting_by_month(
-    user_id, server_id, channel_id, date, date_after_30_days, cancelled
-):
-
-    conn = psycopg2.connect(
-        user=database_user,
-        password=database_password,
-        dbname=database_name,
-        host=database_endpoint,
-        port=database_port,
-    )
-    cur = conn.cursor()
-    postgres_insert_query = f"SELECT * FROM  meetings WHERE time>'{date}' and time<'{date_after_30_days}' and cancelled=false"
-    cur.execute(postgres_insert_query)
-    records = cur.fetchall()
-    print(records)
-    conn.commit()
-    print("Records for the next 1 month ")
-    cur.close()
-    conn.close()
+    return records
