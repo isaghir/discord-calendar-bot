@@ -41,7 +41,7 @@ First ensure you have the following installed:
 
 Then build and push the image to ECR by running the following commands:
 
-${VERSION} is the version number of the image e.g. 1.0.0 (check ECR in the AWS Console to see what the next version
+${VERSION} is the version number of the image e.g. 1.0.0 (check ECR in the AWS Console to see what the next version)
 
 ```
 eval $(aws ecr get-login --no-include-email)
@@ -69,4 +69,9 @@ As well as these commands, this file contains the init_db() function which ensur
 
 ### entrypoint.sh
 This is a startup script that Fargate executes when running the container.
+
+### DockerFile
+This is the specification for building the docker image. The docker image needs to have everything required to run the bot.
+
+
 
