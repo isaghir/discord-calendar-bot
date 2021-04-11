@@ -5,4 +5,6 @@ WORKDIR /bot
 
 RUN pip install -r requirements.txt
 
+ENV PYTHONUNBUFFERED=1
 CMD ["python", "bot.py"]
+
