@@ -68,5 +68,5 @@ The bot uses a database to store information in a meetings table. Every command 
 As well as these commands, this file contains the init_db() function which ensures the database and meetings table exists within postgres RDS instance. This is an idempotent function meaning it can safely run every time the bot starts up and it will always reach the same desired state of database and table existence.
 
 ### entrypoint.sh
-
+This is a startup script that Fargate executes when running the container.
 
