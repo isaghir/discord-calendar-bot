@@ -1,7 +1,6 @@
 # bot.py
-# This file deals with the interections with the discord api only.
-# This file uses concurrent programming hence the use of @, async, and wait. All commands can processes dynamically.
-# We will only run this file
+# This file deals with the interactions with the discord API only.
+# This file uses concurrent programming hence the use of @, async, and wait. All commands can process dynamically.
 
 # Importing relevant libraries,modules and files
 import os
@@ -12,11 +11,11 @@ from discord.ext import commands, tasks
 import database  # importing the database.py file
 from datetime import datetime, timedelta
 
-# Create connection to RDS database and ensure the database and tables exist
+# Create connection to RDS database and ensuring the database and tables exist
 print("Initialising the database.")
 database.init_db()  # function in database.py file
 
-# Loading your .env with your tokens
+# Loading your .env with discord token
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -36,7 +35,7 @@ async def add_meeting(ctx, *args):
     if len(args) == 0:
         await ctx.send_help()
 
-    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    # gather information about the user, server and channel using ctx (https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
     user = ctx.author
     server = ctx.guild
     channel = ctx.channel
@@ -45,7 +44,7 @@ async def add_meeting(ctx, *args):
     duration = args[-1]
     if not duration.isnumeric():
         await ctx.send_help()
-        raise Exception("Duration is not numeric")
+        raise Exception("Duration is not numeric") # sending an error message if the duration input is  incorrect
     start_time = " ".join(args[-3:-1])
     try:
         start_time = datetime.strptime(
@@ -64,14 +63,14 @@ async def add_meeting(ctx, *args):
     channel_id = channel.id
     cancelled = False
 
-    # insert meeting into database
+    # insert meeting into database using the add_meeting function from database.py
     database.add_meeting(
         title, user_id, server_id, channel_id, start_time, end_time, cancelled
     )
 
     await ctx.send(f"<@{user.id}> your meeting has been added.")
 
-
+# Cancel Meetings command
 @bot.command(
     name="cancel_meeting",
     help="Specify meeting title and start time in format dd/mm/yyyy HH:MM e.g. !add_meeting ML Tutorial 06/03/2021 09:00",
@@ -81,7 +80,7 @@ async def cancel_meeting(ctx, *args):
     if len(args) == 0:
         await ctx.send_help()
 
-    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    # gather information about the user, server and channel
     user = ctx.author
     server = ctx.guild
     channel = ctx.channel
@@ -99,15 +98,15 @@ async def cancel_meeting(ctx, *args):
     user_id = user.id
     server_id = server.id
 
-    rows_affected = database.cancel_meeting(title, user_id, server_id, start_time)
-    if rows_affected > 0:
+    rows_affected = database.cancel_meeting(title, user_id, server_id, start_time) # lookup the meetings in the RDS database using the cancel_meeting function from database.py
+    if rows_affected > 0: 
         msg = "Meeting cancelled."
     else:
         msg = "Meeting not found."
 
     await ctx.send(msg)
 
-
+# Look up meetings by day command
 @bot.command(
     name="lookup_meeting_by_day",
     help="Specify the date in format dd/mm/yyyy e.g. !lookup_meeting_by_day 21/08/2021 ",
@@ -117,7 +116,7 @@ async def lookup_meeting_by_day(ctx, *args):
     if len(args) == 0:
         await ctx.send_help()
 
-    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    # gather information about the user, server and channel
     user = ctx.author
     server = ctx.guild
     channel = ctx.channel
@@ -156,13 +155,13 @@ async def lookup_meeting_by_day(ctx, *args):
 
     await ctx.send(f"<@{user.id}> {message}")
 
-
+# Lookup meetings by week
 @bot.command(
     name="lookup_meeting_by_week",
     help="Shows your schedule for the next 7 days from now.",
 )
 async def lookup_meeting_by_week(ctx, *args):
-    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    # gather information about the user, server and channel
     user = ctx.author
     server = ctx.guild
     channel = ctx.channel
@@ -198,13 +197,13 @@ async def lookup_meeting_by_week(ctx, *args):
 
     await ctx.send(f"<@{user.id}> {message}")
 
-
+# Lookup meetings by month
 @bot.command(
     name="lookup_meeting_by_month",
     help="Shows your schedule for the next 1 month from now.",
 )
 async def lookup_meeting_by_month(ctx, *args):
-    # gather information about the user, server and channel (see https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#discord.ext.commands.Context)
+    # gather information about the user, server and channel 
     user = ctx.author
     server = ctx.guild
     channel = ctx.channel
@@ -243,7 +242,7 @@ async def lookup_meeting_by_month(ctx, *args):
     await ctx.send(f"<@{user.id}> {message}")
 
 
-# every minute, check for meetings starting in the next minute and DM the creator of the meeting
+# NOTIFICATIONS: every minute, check for meetings starting in the next minute and DM the creator of the meeting
 @tasks.loop(minutes=1.0)
 async def notify_meeting_start():
     date = datetime.now()
@@ -263,15 +262,15 @@ async def notify_meeting_start():
             user = bot.get_user(int(user_id))
             await user.send(message)
 
-
+            
 # Shows when the bot is connected to the discord server
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
     notify_meeting_start.start()
 
-
-# sends a message to the user contaning the error observed when running the bot.py file
+    
+# sends a message to the user contaning log errors
 @bot.event
 async def on_command_error(ctx, error):
     print(error)
