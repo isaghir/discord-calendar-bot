@@ -19,7 +19,6 @@ database.init_db()  # function in database.py file
 # Loading your .env with your tokens
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD = os.getenv("DISCORD_GUILD")
 
 # enable collection of user data so the bot.get_user function works
 intents = discord.Intents.default()
