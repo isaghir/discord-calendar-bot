@@ -9,7 +9,7 @@ import uuid
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
-load_dotenv()  # loading the .env file 
+load_dotenv()  # loading the .env file
 
 # creating variables for our creditentials which are needed to establish a database connection
 database_endpoint = os.getenv("DATABASE_ENDPOINT")
@@ -28,9 +28,13 @@ def create_db():
         host=database_endpoint,
         port=database_port,
     )
-    conn.autocommit = True  # This is required or CREATE DATABASE statement will not work. It makes sure the database is 'saved' and not deleted
 
-    cur = conn.cursor()  # We need a cursor to conduct transactional database operations/queries
+    # This is required or CREATE DATABASE statement will not work. It makes sure the database is 'saved' and not deleted
+    conn.autocommit = True
+
+    cur = (
+        conn.cursor()
+    )  # We need a cursor to conduct transactional database operations/queries
 
     print(f"Checking if database {database_name} already exists.")
 
@@ -53,8 +57,8 @@ def create_db():
 
 # The following function creates a table in our database.
 def create_tables():
-	#establish a connection the the database
-    print("Creating connection to Postgres") # prints to the logs
+    # establish a connection the the database
+    print("Creating connection to Postgres")  # prints to the logs
     conn = psycopg2.connect(
         user=database_user,
         password=database_password,
@@ -63,9 +67,11 @@ def create_tables():
         port=database_port,
     )
 
-    cur = conn.cursor()   #create our cursor which will be used to execute transactional queries
+    cur = (
+        conn.cursor()
+    )  # create our cursor which will be used to execute transactional queries
 
-    print("Creating meetings table if it doesn't exist.") # prints to the logs
+    print("Creating meetings table if it doesn't exist.")  # prints to the logs
     # cur.execute(
     #     f"DROP TABLE IF EXISTS meetings"
     # )  # Remove this after testing is complete(keep it just so we dont have to always drop the table to make changes)
@@ -82,12 +88,13 @@ def create_tables():
     )"""
     )  # query to create the table
 
-    conn.commit() # commit the query to the database
-    cur.close() # close the cursor
-    conn.close() # close the connection
+    conn.commit()  # commit the query to the database
+    cur.close()  # close the cursor
+    conn.close()  # close the connection
 
 
-# init_db function will be used in bot.py at start up. This means we can call a single function in bot.py that runs the following two functions.
+# init_db function will be used in bot.py at start up. This means we can call a single function in bot.py that
+# runs the following two functions.
 def init_db():
     create_db()
     create_tables()
@@ -95,7 +102,7 @@ def init_db():
 
 # Function to add meeting records to the table (using SQL queries)
 def add_meeting(title, user_id, server_id, channel_id, start_time, end_time, cancelled):
-	#establish a connection the the database
+    # establish a connection the the database
     conn = psycopg2.connect(
         user=database_user,
         password=database_password,
@@ -105,23 +112,29 @@ def add_meeting(title, user_id, server_id, channel_id, start_time, end_time, can
     )
 
     meeting_id = uuid.uuid4()  # Create a unique value for meeting_id
-    start_time_str = start_time.isoformat() # string representation of time
-    end_time_str = end_time.isoformat() # string representation of time
+    start_time_str = start_time.isoformat()  # string representation of time
+    end_time_str = end_time.isoformat()  # string representation of time
     psycopg2.extras.register_uuid()  # register the uuid
 
-    cur = conn.cursor()  #create our cursor which will be used to execute transactional queries
-    postgres_insert_query = f"INSERT INTO meetings (meeting_id, title, user_id, server_id, channel_id, start_time, end_time, cancelled) VALUES ('{meeting_id}','{title}','{user_id}','{server_id}','{channel_id}','{start_time_str}','{end_time_str}',{cancelled})"
-    cur.execute(postgres_insert_query) # execute the query using the cursor
+    cur = (
+        conn.cursor()
+    )  # create our cursor which will be used to execute transactional queries
+    postgres_insert_query = (
+        "INSERT INTO meetings "
+        + "(meeting_id, title, user_id, server_id, channel_id, start_time, end_time, cancelled) "
+        + f"VALUES ('{meeting_id}','{title}','{user_id}','{server_id}','{channel_id}','{start_time_str}','{end_time_str}',{cancelled})"
+    )
+    cur.execute(postgres_insert_query)  # execute the query using the cursor
 
-    conn.commit() # commits the query to the database 
-    print("Record inserted successfully into database") # prints to logs
+    conn.commit()  # commits the query to the database
+    print("Record inserted successfully into database")  # prints to logs
     cur.close()  # close the cursor
-    conn.close() # close the connection
+    conn.close()  # close the connection
 
 
 # Function to remove cancelled meetings - check if deleted or update cancel
 def cancel_meeting(title, user_id, server_id, start_time):
-	#establish a connection the the database
+    # establish a connection the the database
     conn = psycopg2.connect(
         user=database_user,
         password=database_password,
@@ -129,20 +142,23 @@ def cancel_meeting(title, user_id, server_id, start_time):
         host=database_endpoint,
         port=database_port,
     )
-    cur = conn.cursor() # create our cursor which will be used to execute transactional queries
+    cur = (
+        conn.cursor()
+    )  # create our cursor which will be used to execute transactional queries
     query = f"UPDATE meetings SET cancelled = TRUE WHERE title = '{title}' and start_time='{start_time}'"
-    cur.execute(query) # execute the query using the cursor
-    rows_affected = cur.rowcount  # return the number of rows returened from the query 
-    conn.commit() # commits the query to the database 
-    print(f"Cancelled meeting {title} {start_time}") 
-    cur.close() # close the cursor
-    conn.close() # close the connection
+    cur.execute(query)  # execute the query using the cursor
+    rows_affected = cur.rowcount  # return the number of rows returened from the query
+    conn.commit()  # commits the query to the database
+    print(f"Cancelled meeting {title} {start_time}")
+    cur.close()  # close the cursor
+    conn.close()  # close the connection
     return rows_affected
 
 
-# Function to lookup meeting records in the table for a specific user, we can use this to lookup meetings by day, month or week as we simply need to supply the end date in the bot.py file.
+# Function to lookup meeting records in the table for a specific user, we can use this to lookup meetings by day,
+# month or week as we simply need to supply the end date in the bot.py file.
 def lookup_meeting_by_date_window(user_id, server_id, start_date, end_date):
-#establish a connection the the database
+    # establish a connection the the database
     conn = psycopg2.connect(
         user=database_user,
         password=database_password,
@@ -151,21 +167,30 @@ def lookup_meeting_by_date_window(user_id, server_id, start_date, end_date):
         port=database_port,
     )
 
-    
-    cur = conn.cursor() # create our cursor which will be used to execute transactional queries
-    query = f"SELECT title,start_time,end_time FROM  meetings WHERE start_time>'{start_date}' and start_time<'{end_date}' and cancelled=false and user_id='{user_id}' and server_id='{server_id}'"
-    cur.execute(query) # execute the query using the cursor
-    records = cur.fetchall()  # return query results as a list 
-    conn.commit() # commits the query to the database 
-    cur.close() # close the cursor
+    cur = (
+        conn.cursor()
+    )  # create our cursor which will be used to execute transactional queries
+    query = (
+        "SELECT title,start_time,end_time FROM meetings "
+        + f"WHERE start_time>'{start_date}' "
+        + f"and start_time<'{end_date}' "
+        + "and cancelled=false "
+        + f"and user_id='{user_id}' "
+        + f"and server_id='{server_id}'"
+    )
+    cur.execute(query)  # execute the query using the cursor
+    records = cur.fetchall()  # return query results as a list
+    conn.commit()  # commits the query to the database
+    cur.close()  # close the cursor
     conn.close()  # close the connection
     return records
 
 
-# Function to lookup meeting records in the table for all users, this will be used for the notification function in bot.py, we are not looking up a specific user here because..
-# the notification function will run for all users every minute, hence we don't lookup the user_id in the the SQL query.
+# Function to lookup meeting records in the table for all users, this will be used for the notification function in bot.py,
+# we are not looking up a specific user here because the notification function will run for all users every minute,
+# hence we don't lookup the user_id in the the SQL query.
 def lookup_all_meetings_by_date_window(start_date, end_date):
-#establish a connection the the database
+    # establish a connection the the database
     conn = psycopg2.connect(
         user=database_user,
         password=database_password,
@@ -173,13 +198,15 @@ def lookup_all_meetings_by_date_window(start_date, end_date):
         host=database_endpoint,
         port=database_port,
     )
-	
-    cur = conn.cursor() # create our cursor which will be used to execute transactional queries
+
+    cur = (
+        conn.cursor()
+    )  # create our cursor which will be used to execute transactional queries
     # define an SQL query
     query = f"SELECT title,start_time,end_time,user_id FROM  meetings WHERE start_time>'{start_date}' and start_time<'{end_date}' and cancelled=false"
-    cur.execute(query) # execute the query using the cursor
-    records = cur.fetchall() # return query results as a list 
-    conn.commit()  # commits the query to the database 
-    cur.close() # close the cursor
-    conn.close() # close the connection
+    cur.execute(query)  # execute the query using the cursor
+    records = cur.fetchall()  # return query results as a list
+    conn.commit()  # commits the query to the database
+    cur.close()  # close the cursor
+    conn.close()  # close the connection
     return records
